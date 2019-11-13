@@ -1,5 +1,5 @@
 This directory contains scripts to reproduce Figures from Dempster et al.
-It requires the R package CRISPRcollatio to be installed from here:
+It requires the R package CRISPRcollatio to be installed from DepMap-Analytics/CRISPRcollatio
 
 These scripts require the following R packages to be installed:
 CRISPRcleanR
