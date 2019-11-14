@@ -200,92 +200,8 @@ SAvsBR<-PrRc_and_ROC_Curves(loc_RES_S = RES_S,loc_RES_B = RES_B,es_th = 0,
                             fdr_th = 0.05,study1name = 'Sanger',study2name = 'Broad')
 BRvsSA<-PrRc_and_ROC_Curves(loc_RES_S = RES_B,loc_RES_B = RES_S,es_th = 0,
                             fdr_th = 0.05,study1name = 'Broad',study2name = 'Sanger')
-PR<-function (loc_RES_S, loc_RES_B, es_th = 1, fdr_th = 0.01, study1name = "study1", 
-              study2name = "study2") 
-{
-  WW <- loc_RES_S
-  WA <- loc_RES_B
-  ii <- which(WW$fdr_oa < fdr_th)
-  O <- ii[order(WW$p[ii])]
-  prctl <- floor(quantile(1:length(O), c(0.2, 0.4, 0.6, 0.8, 
-                                         1)))
-  cols <- makeTransparent(colorRampPalette(c("purple", "orange"))(5), 
-                          120)
-  Npos <- vector()
-  AUPREC <- vector()
-  rndAUPREC <- vector()
-  AUROC <- vector()
-  rndAUROC <- rep(0.5, 5)
-  for (i in 1:length(prctl)) {
-    positives <- O[1:prctl[i]]
-    Npos[i] <- length(positives)
-    observed <- rep(0, nrow(WA))
-    names(observed) <- paste("a", 1:nrow(WA))
-    observed[positives] <- 1
-    predictions <- -log10(WA$p)
-    names(predictions) <- paste("a", 1:nrow(WA))
-    RES <- ccr.PrRc_Curve(FCsprofile = -predictions, positives = names(which(observed > 
-                                                                               0)), negatives = names(which(observed == 0)), display = FALSE)
-    AUPREC[i] <- RES$AUC
-    rndAUPREC[i] <- RES$RND
-    if (i == 1) {
-      plot(RES$curve[, "recall"], RES$curve[, "precision"], 
-           type = "l", lwd = 4, xlab = "Recall", ylab = "Precision", 
-           col = cols[i], main = "",cex.axis=1,cex.lab=1,tcl=0.5,tck=-0.01)
-    }
-    else {
-      lines(RES$curve[, "recall"], RES$curve[, "precision"], 
-            col = cols[i], lwd = 4)
-    }
-    #abline(h = min(RES$curve[, "precision"]), col = cols[i], 
-    #       lty = 1)
-  }
-  #legend("left", "random", lty = 1, bty = "n")
 
 
-  
-}
-
-ROC<-function (loc_RES_S, loc_RES_B, es_th = 1, fdr_th = 0.01, study1name = "study1", 
-              study2name = "study2") {
-  WW <- loc_RES_S
-WA <- loc_RES_B
-ii <- which(WW$fdr_oa < fdr_th)
-O <- ii[order(WW$p[ii])]
-prctl <- floor(quantile(1:length(O), c(0.2, 0.4, 0.6, 0.8, 
-                                       1)))
-cols <- makeTransparent(colorRampPalette(c("purple", "orange"))(5), 
-                        120)
-Npos <- vector()
-AUPREC <- vector()
-rndAUPREC <- vector()
-AUROC <- vector()
-rndAUROC <- rep(0.5, 5)
-for (i in 1:length(prctl)) {
-  positives <- O[1:prctl[i]]
-  observed <- rep(0, nrow(WA))
-  names(observed) <- paste("a", 1:nrow(WA))
-  observed[positives] <- 1
-  predictions <- -log10(WA$p)
-  names(predictions) <- paste("a", 1:nrow(WA))
-  RES <- ROC_curve(-predictions, positives = names(which(observed > 
-                                                           0)), negatives = names(which(observed == 0)))
-  AUROC[i] <- RES$auc
-  if (i == 1) {
-    plot(RES$specificities, RES$sensitivities, type = "l", 
-         lwd = 4, xlab = "Specificity", ylab = "Recall", 
-         col = cols[i], xlim = c(1, 0),cex.axis=1,cex.lab=1,tcl=0.5,tck=-0.01,cex.main=0.9)
-  }
-  else {
-    lines(RES$specificities, RES$sensitivities, col = cols[i], 
-          lwd = 4)
-  }
-}
-lines(c(0, 1), c(1, 0), col = "gray")
-legend("bottomright", c("20%", "40%", "60%", "80%", "100%"), 
-       title = "Significance quantile", col = cols, lwd = 4)
-
-}
 ###Figure 3 b### 
 ##SA is Broad association vs Sanger ranked p-value
 par(mar=c(0.1,0.1,0.1,0.1)+0.1,mgp=c(0.1,0.1,0))
@@ -317,29 +233,6 @@ inboth<-RES_B_signif[intersect(rownames(RES_S_signif),rownames(RES_B_signif)),]
 
 ## Plot examples of consistent associations
 
-plotAssociationExamplesCP<-function (gene, feat, loc_CombinedDataset, loc_site, loc_cids) 
-{
-  essS <- loc_CombinedDataset[gene, loc_site == "Sanger"]
-  essB <- loc_CombinedDataset[gene, loc_site == "Broad"]
-  pattern <- MoBEM[feat, as.character(loc_cids[loc_site == 
-                                                 "Sanger"])]
-  cols <- rep("darkgray", length(essB))
-  cols[which(pattern == 1)] <- "darkgreen"
-  beeswarm(essB ~ pattern, corral = "wrap", bg = c(makeTransparent("gray"), 
-                                                   makeTransparent("darkgreen")), pch = 21, col = c("gray", 
-                                                                                                    "darkgreen"), cex = 1.5, ylim = range(essB), las = 2, 
-           labels = c("absent", "present"), xlab = feat, ylab = "",axes=F)
-  par(new = TRUE)
-  boxplot(essB ~ pattern, col = NA, ylim = range(essB), frame.plot = FALSE, 
-          xaxt = "n",  outline = FALSE,tcl=0.5,tck=-0.01)
-  beeswarm(essS ~ pattern, corral = "wrap", bg = c(makeTransparent("gray"), 
-                                                   makeTransparent("darkgreen")), pch = 21, col = c("gray", 
-                                                                                                    "darkgreen"), cex = 1.5, ylim = range(essS), las = 2, 
-           labels = c("absent", "present"), xlab = feat, ylab = "",axes=F)
-  par(new = TRUE)
-  boxplot(essS ~ pattern, col = NA, ylim = range(essS), frame.plot = FALSE, 
-          xaxt = "n",yaxt="n", outline = FALSE,tcl=0.5,tck=-0.01)
-}
 
 ###Figure 3c ###
 pdf(paste0(ResultsFolder,"ExampleBiomarkers.pdf"),width=6.5,height=2.25)

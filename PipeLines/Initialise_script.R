@@ -3,7 +3,7 @@ ExternalData<-"../ExternalData/"
 ResultsFolder<-"../ResultsFolder/"
 InputFolder<-"/path/to/data/from/Figshare/"
 
-library(CRISPRcollatio)
+
 library(CRISPRcleanR)
 library(preprocessCore)
 library(stringr)
@@ -24,6 +24,9 @@ library(qusage)
 
 data("BAGEL_essential")
 data("BAGEL_nonEssential")
+
+#source functions for use in analysis:
+source("../Functions/CRISPRcollatio.R")
 
 #script 1 to generate batch corrected data. Figures 2 d,e,f and Supplementary Figures 3a,b,c
 source("BatchCorrection_and_Checks.R")
