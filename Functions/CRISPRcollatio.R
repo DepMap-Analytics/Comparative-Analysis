@@ -514,48 +514,49 @@ decodeCFEs<-function(CFEs){
   return(rn)
 }
 nDepletions<-function(FCs){
-
+  
   data(BAGEL_essential)
   data(BAGEL_nonEssential)
-
+  
   RES<-ccr.PrRc_Curve(FCs,BAGEL_essential,BAGEL_nonEssential,display = FALSE,FDRth = 0.05)
-
+  
   ndep<-length(which(FCs< RES$sigthreshold))
-
-  return(list(Ndep=ndep,Recall=RES$Recall))
+  
+  return(list(Ndep=ndep,Recall=RES$Recall,sigDep=FCs<RES$sigthreshold+0))
 }
-tSNEplot<-function(dataset,nit=1000,title=''){
-  clnames<-str_split(colnames(dataset),'_')
+tSNEplot<-function(dataset,nit=1000,title='',perplexity=30){
+  clnames<-str_split(colnames(dataset),'---')
   clnames<-unlist(lapply(clnames,function(x){x[1]}))
-
+  
   site<-str_split(colnames(dataset),'---')
   site<-unlist(lapply(site,function(x){x[[2]]}))
-
+  
   colnames(dataset)<-clnames
   cdist<-as.dist(1-cor(dataset))
-
+  
   set.seed(0xA5EED)
-
-  tfit<-tsne(cdist,max_iter = nit)
-
+  
+  tfit<-tsne(cdist,max_iter = nit,perplexity=perplexity)
+  
   color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
-
+  
   uc<-unique(clnames)
   COLS<-sample(color,length(uc))
   names(COLS)<-uc
-
+  
   tCOLS<-makeTransparent(COLS,alpha = 140)
-
+  
   SYMBOLS<-rep(21,length(site))
   SYMBOLS[site=='Broad']<-23
   names(SYMBOLS)<-site
   CEX<-rep(1.3,length(site))
   CEX[site=='Broad']<-1.8
-
+  
   plot(tfit[,1],tfit[,2],bg=tCOLS[clnames],col='black',cex=CEX,pch=SYMBOLS[site],frame.plot = FALSE,xaxt='n',yaxt='n',
        xlab='tSNE AU',ylab='tSNE AU',main=title)
-
+  
 }
+
 multDensPlot<-function(TOPLOT,COLS,XLIMS,YLIMS,TITLE,LEGentries,XLAB=''){
 
   YM<-vector()
@@ -631,14 +632,14 @@ distPlot<-function(dataset,title,XLIM,YLIMS){
 
 }
 dataQuality<-function(dataset){
-
+  
   data(BAGEL_essential)
   data(BAGEL_nonEssential)
-
+  
   nsamples<-ncol(dataset)
-
+  
   qc<-vector()
-  for (i in 1:158){
+  for (i in 1:nsamples){
     FCs<-dataset[,i]
     names(FCs)<-rownames(dataset)
     RES<-PrRc_Curve(FCs,positives = BAGEL_essential,negatives = BAGEL_nonEssential,display = FALSE,FDRth = 0.05)
@@ -646,46 +647,6 @@ dataQuality<-function(dataset){
   }
   names(qc)<-colnames(dataset)
   return(qc)
-}
-classPerf<-function(dataset,qualityTH=Inf,QC=NULL){
-
-
-  if(length(QC)>0){
-    clnames<-str_split(colnames(dataset),'_')
-    clnames<-unlist(lapply(clnames,function(x){x[1]}))
-
-    uc<-unique(clnames)
-    for (i in 1:length(uc)){
-      QC[which(clnames==uc[i])]<-rep(min(QC[which(clnames==uc[i])]),2)
-    }
-
-    dataset<-dataset[,QC>=qualityTH]
-  }
-
-  clnames<-str_split(colnames(dataset),'_')
-  clnames<-unlist(lapply(clnames,function(x){x[1]}))
-
-  site<-str_split(colnames(dataset),'---')
-  site<-unlist(lapply(site,function(x){x[[2]]}))
-
-  cdist<-as.matrix(1-cor(dataset))
-
-  #cdist<-as.matrix(dist(t(dataset),method = 'manhattan'))
-
-  ncls<-ncol(cdist)
-
-  MATCH<-NULL
-  for (i in 1:ncls){
-    neighbours<-clnames[setdiff(order(cdist[i,]),i)]
-
-    MATCH<-rbind(MATCH,neighbours==clnames[i])
-  }
-
-  MATCH<-MATCH+0
-  rownames(MATCH)<-rownames(cdist)
-  curv<-cumsum(colSums(MATCH))/ncol(cdist)
-
-  return(list(MATCHmat=MATCH,CURV=curv))
 }
 DisCar<-function(dataset,ref_Essential,ref_nonEssential,CL,th=0.05,SubSet=NULL){
   id<-grep(CL,colnames(dataset))
@@ -1114,4 +1075,165 @@ GSEAfunction<-function(rankedlist,geneset){
   maxdev<-RunningSum[which.max(abs(RunningSum))]
   return(list(ESscore=maxdev,RunningSum=RunningSum))
 }
+GetSigProfiles<-function(dataset,CLs,ref_Essential,ref_nonEssential,thresh=0.05){
+  ncls <- length(CLs)
+  
+  DepletedBroad <- list()
+  DepletedSanger <- list()
+  th<-thresh
+  for (i in 1:ncls) {
+    CL<-CLs[i]
+    id <- grep(CL, colnames(dataset))
+    FC_broad <- dataset[, id[1]]
+    names(FC_broad) <- rownames(dataset)
+    RES <- ccr.PrRc_Curve(FC_broad, ref_Essential, ref_nonEssential,
+                          FDRth = th, display = FALSE)
+    DepletedBroad[[i]] <- names(which(FC_broad < RES$sigthreshold))
+    FC_sanger <- dataset[, id[2]]
+    names(FC_sanger) <- rownames(dataset)
+    RES <- ccr.PrRc_Curve(FC_sanger, ref_Essential, ref_nonEssential,
+                          FDRth = th, display = FALSE)
+    DepletedSanger[[i]] <- names(which(FC_sanger < RES$sigthreshold))
+    
+  }
+  return(list(DepletedBroad<-unique(unlist(DepletedBroad)),DepletedSanger<-unique(unlist(DepletedSanger))))
+}
+
+classPerf<-function(dataset,qualityTH=Inf,QC=NULL){
+  
+  
+  if(length(QC)>0){
+    clnames<-str_split(colnames(dataset),'---')
+    clnames<-unlist(lapply(clnames,function(x){x[1]}))
+    
+    uc<-unique(clnames)
+    for (i in 1:length(uc)){
+      QC[which(clnames==uc[i])]<-rep(min(QC[which(clnames==uc[i])]),2)
+    }
+    
+    dataset<-dataset[,QC>=qualityTH]
+  }
+  
+  clnames<-str_split(colnames(dataset),'---')
+  clnames<-unlist(lapply(clnames,function(x){x[1]}))
+  
+  site<-str_split(colnames(dataset),'---')
+  site<-unlist(lapply(site,function(x){x[[2]]}))
+  
+  cdist<-as.matrix(1-cor(dataset))
+  
+  #cdist<-as.matrix(dist(t(dataset),method = 'manhattan'))
+  
+  ncls<-ncol(cdist)
+  
+  MATCH<-NULL
+  for (i in 1:ncls){
+    neighbours<-clnames[setdiff(order(cdist[i,]),i)]
+    
+    MATCH<-rbind(MATCH,neighbours==clnames[i])
+  }
+  
+  MATCH<-MATCH+0
+  rownames(MATCH)<-rownames(cdist)
+  curv<-cumsum(colSums(MATCH))/ncol(cdist)
+  
+  return(list(MATCHmat=MATCH,CURV=curv))
+}
+
+RNAbiomarkers<-function(CombineRNA,BroadDep,SangerDep){
+  #number of genes in Sanger RNA expression file:
+  N<-21669
+  
+  
+  CLid<-sapply(colnames(CombineRNA),function(x) strsplit(x,"...",fixed=TRUE)[[1]][2])
+  Broad_Var<-CombineRNA[,names(CLid)[CLid=="Broad"]]
+  Sanger_Var<-CombineRNA[,names(CLid)[CLid=="Sanger"]]
+  colnames(Broad_Var)<-sapply(colnames(Broad_Var),function(x) strsplit(x,"...",fixed=TRUE)[[1]][1])
+  colnames(Sanger_Var)<-sapply(colnames(Sanger_Var),function(x) strsplit(x,"...",fixed=TRUE)[[1]][1])
+  #can do this the long way round:
+  fullmatrixBroad<-rbind(Broad_Var,BroadDep[,colnames(Broad_Var)])
+  
+  fullmatrixSanger<-rbind(Sanger_Var,SangerDep[,colnames(Sanger_Var)])
+  
+  #now do the correlation matrices, although only want a subset of all these correlations!
+  
+  allCorBroad<-cor(t(fullmatrixBroad))
+  allCorSanger<-cor(t(fullmatrixSanger))
+  
+  ExtractCorBroad<-allCorBroad[,(nrow(Broad_Var)+1):ncol(allCorBroad)]
+  ExtractCorBroad<-ExtractCorBroad[1:nrow(Broad_Var),]
+  
+  BroadCorInput<-as.data.frame(ExtractCorBroad)
+  BroadCorInput$geneRNA<-rownames(BroadCorInput)
+  BroadCorInput<-melt(BroadCorInput)
+  
+  ExtractCorSanger<-allCorSanger[,(nrow(Sanger_Var)+1):ncol(allCorSanger)]
+  ExtractCorSanger<-ExtractCorSanger[1:nrow(Sanger_Var),]
+  
+  OverallCor<-cor(as.vector(ExtractCorBroad),as.vector(ExtractCorSanger))
+  
+  print(paste("Overall correlation between correlations!",OverallCor))
+  
+  SangerCorInput<-as.data.frame(ExtractCorSanger)
+  SangerCorInput$geneRNA<-rownames(SangerCorInput)
+  SangerCorInput<-melt(SangerCorInput)
+  
+  
+  colnames(Broad_Var)<-paste0(colnames(Broad_Var),"---Broad")
+  colnames(Sanger_Var)<-paste0(colnames(Sanger_Var),"---Sanger")
+  BothRNA<-cbind(Broad_Var,Sanger_Var)
+  
+  ## want to do the correlation tests between the gene expression vs dependency scores
+  ##systematic correlation tests on ExtractCorBroad and ExtractCorSanger
+  r2Broad<-ExtractCorBroad*ExtractCorBroad
+  r2Sanger<-ExtractCorSanger*ExtractCorSanger
+  Broad_denom<-sqrt((1-r2Broad)/(ncol(Broad_Var)-2))
+  Sanger_denom<-sqrt((1-r2Sanger)/(ncol(Sanger_Var)-2))
+  
+  tStat_Broad<-ExtractCorBroad/Broad_denom
+  tStat_Sanger<-ExtractCorSanger/Sanger_denom
+  
+  pval_Broad<-2*pt(abs(tStat_Broad),ncol(Broad_Var)-2,lower.tail=FALSE)
+  pval_Sanger<-2*pt(abs(tStat_Sanger),ncol(Sanger_Var)-2,lower.tail=FALSE)
+  
+  inputtest<-as.vector(pval_Broad)
+  fdr_Broad<-qvalue(as.vector(pval_Broad))$qvalues
+  fdrthresh_Broad<-qvalue(as.vector(pval_Broad),fdr.level = 0.05)$significant
+  fdr_Sanger<-qvalue(as.vector(pval_Sanger))$qvalues
+  fdrthresh_Sanger<-qvalue(as.vector(pval_Sanger),fdr.level=0.05)$significant
+  
+  fdrMat_Broad<-matrix(fdr_Broad,nrow=nrow(pval_Broad),ncol=ncol(pval_Broad),byrow=FALSE)
+  fdrMat_Sanger<-matrix(fdr_Sanger,nrow=nrow(pval_Sanger),ncol=ncol(pval_Sanger),byrow=FALSE)
+  dimnames(fdrMat_Broad)<-dimnames(pval_Broad)
+  dimnames(fdrMat_Sanger)<-dimnames(pval_Sanger)
+  
+  fdrMatT_Broad<-matrix(fdrthresh_Broad,nrow=nrow(pval_Broad),ncol=ncol(pval_Broad),byrow=FALSE)
+  fdrMatT_Sanger<-matrix(fdrthresh_Sanger,nrow=nrow(pval_Sanger),ncol=ncol(pval_Sanger),byrow=FALSE)
+  dimnames(fdrMatT_Broad)<-dimnames(pval_Broad)
+  dimnames(fdrMatT_Sanger)<-dimnames(pval_Sanger)
+  
+  #from threshold can work out the minimum correlation value required to get 5% fdr.
+  minT_B<-min(abs(ExtractCorBroad[fdrMatT_Broad]))
+  minT_S<-min(abs(ExtractCorSanger[fdrMatT_Sanger]))
+  
+  RNA_data<-BroadCorInput
+  colnames(RNA_data)<-c("gene","SSD","Broad")
+  RNA_data$Sanger<-SangerCorInput[,"value"]
+  
+  RES_cP<-classPerf(BothRNA)
+  
+  ##Fishers exact test for 2x2 contingency, signif S, B, not signif S, B
+  SignifBoth<-sum(fdrMatT_Broad*fdrMatT_Sanger)
+  SignifSanger<-sum(fdrMatT_Sanger)-SignifBoth
+  SignifBroad<-sum(fdrMatT_Broad)-SignifBoth
+  NotSignif<-sum((fdrMatT_Broad+fdrMatT_Sanger)==0)
+  
+  FTMatrix<-matrix(c(NotSignif,SignifSanger,SignifBroad,SignifBoth),nrow=2)
+  FTtest<-fisher.test(FTMatrix)
+  
+  FTtest<-my.hypTest(SignifBoth,SignifSanger+SignifBoth,SignifBroad+SignifBoth,N)
+  
+  return(list(BroadData=Broad_Var,SangerData=Sanger_Var,PerfAnalysis=RES_cP,CombineRNA=BothRNA,PlotRNAdata=RNA_data,B_Sthresh=c(minT_B,minT_S),FTTest=FTtest))
+}
+
 

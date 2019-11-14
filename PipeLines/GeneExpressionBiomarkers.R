@@ -36,8 +36,8 @@ plot(dendro,axes=F,horiz=T,cex.lab=0.8,cex.axis=0.8)
 dev.off()
 
 #load CRISPR data
-broad_data<-read.csv(paste0(ExternalData,"geneFCBroad.csv"),header=T,row.names=1,stringsAsFactors = F)
-sanger_data<-read.csv(paste0(ExternalData,"geneFCSanger.csv"),header=T,row.names=1,stringsAsFactors = F)
+broad_data<-read.csv(paste0(ResultsFolder,"geneFCBroad.csv"),header=T,row.names=1,stringsAsFactors = F)
+sanger_data<-read.csv(paste0(ResultsFolder,"geneFCSanger.csv"),header=T,row.names=1,stringsAsFactors = F)
 
 dn<-dimnames(broad_data)
 broad_data<-normalize.quantiles(as.matrix(broad_data))
@@ -48,13 +48,14 @@ sanger_data<-normalize.quantiles(as.matrix(sanger_data))
 dimnames(sanger_data)<-dn
 
 #load strongly selective dependencies to test for gene expression biomarkers
-SSDs_genes2<-read.csv(paste0(ExternalData,"StronglySelectiveDependencies.csv"),header=T,stringsAsFactors = F)
+SSDs_genes2<-read.csv(paste0(InputFolder,"StronglySelectiveDependencies.csv"),header=T,stringsAsFactors = F)
 
-
-broad_gene<-broad_data[intersect(rownames(broad_data),SSDs_genes2[,1]),Code$mn]
-sanger_gene<-sanger_data[intersect(rownames(sanger_data),SSDs_genes2[,1]),Code$mn]
-colnames(broad_gene)<-Code$COSMIC
-colnames(sanger_gene)<-Code$COSMIC
+CosmicIds<-unique(sapply(colnames(CombineRNA),function(x) strsplit(x,"...",fixed=TRUE)[[1]][1]))
+IncData<-OverlapData[OverlapData$COSMIC%in%CosmicIds,]
+broad_gene<-broad_data[intersect(rownames(broad_data),SSDs_genes2[,1]),IncData$mn]
+sanger_gene<-sanger_data[intersect(rownames(sanger_data),SSDs_genes2[,1]),IncData$mn]
+colnames(broad_gene)<-IncData$COSMIC
+colnames(sanger_gene)<-IncData$COSMIC
 
 BiomarkerRNA<-RNAbiomarkers(CombineRNA,broad_gene,sanger_gene)
 RNA_data<-BiomarkerRNA$PlotRNAdata

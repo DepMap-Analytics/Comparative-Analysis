@@ -1,7 +1,7 @@
-setwd("/path/to/this/directory/")
+setwd("/path/to/directory/containing/Pipelines/")
 ExternalData<-"../ExternalData/"
 ResultsFolder<-"../ResultsFolder/"
-InputFolder<-"/path/to/data/from/Figshare/"
+InputFolder<-"/path/to/data/downloaded/from/figshare"
 
 
 library(CRISPRcleanR)

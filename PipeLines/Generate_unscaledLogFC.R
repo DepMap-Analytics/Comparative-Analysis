@@ -83,3 +83,10 @@ write.table(sort(HT29TP_Broad,decreasing=T),file=paste0(ResultsFolder,"BroadTP.r
 write.table(sort(HT29TP_Sanger,decreasing=T),file=paste0(ResultsFolder,"SangerTP.rnk"),quote=F,sep="\t")
 #clear all variables after generating data
 rm(list=ls())
+
+ExternalData<-"../ExternalData/"
+ResultsFolder<-"../ResultsFolder/"
+InputFolder<-"/Volumes/GoogleDrive/My Drive/CRISPRcollatio/InputData/7970993/"
+source("../Functions/CRISPRcollatio.R")
+data("BAGEL_essential")
+data("BAGEL_nonEssential")

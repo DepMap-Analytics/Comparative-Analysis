@@ -61,7 +61,7 @@ CLs<-unlist(lapply(str_split(colnames(mergedDataset),'---'),function(x) x[1]))
 CLs<-CLs[1:147]
 GeneSetOnesignif<-GetSigProfiles(mergedDataset,CLs,BAGEL_essential,BAGEL_nonEssential)
 OneSignif<-union(GeneSetOnesignif[[1]],GeneSetOnesignif[[2]])
-write.csv(OneSignif,file=paste0(ExternalData,"GenesVariable.csv"))
+write.csv(OneSignif,file=paste0(ResultsFolder,"GenesVariable.csv"))
 
 
 dataset<-mergedDataset[OneSignif,]
@@ -241,8 +241,8 @@ dev.off()
 #Dependency agreement:
 
 ## Loading reference sets of essential/non-essential genes
-essential_genes<-read.csv(paste0(ExternalData,"EssentialGenes.csv"),header=T,stringsAsFactors = FALSE)
-Nonessential_genes<-read.csv(paste0(ExternalData,"NonessentialGenes.csv"),header=T,stringsAsFactors = FALSE)
+essential_genes<-read.csv(paste0(InputFolder,"EssentialGenes.csv"),header=T,stringsAsFactors = FALSE)
+Nonessential_genes<-read.csv(paste0(InputFolder,"NonessentialGenes.csv"),header=T,stringsAsFactors = FALSE)
 
 
 
@@ -332,8 +332,8 @@ print(paste('Average study agreement batch corrected :', 100*(round(mean(postAgr
 preDataQ<-dataQuality(mergedDataset)
 postDataQ<-dataQuality(corrected)
 
-write.csv(preDataQ,file="./ResultsFolder/PreCorrectionDataQuality.csv")
-write.csv(postDataQ,file="./ResultsFolder/PostCorrectionDataQuality.csv")
+write.csv(preDataQ,file="../ResultsFolder/PreCorrectionDataQuality.csv")
+write.csv(postDataQ,file="../ResultsFolder/PostCorrectionDataQuality.csv")
 
 
 ## Plotting screen agreement in relation to data quality

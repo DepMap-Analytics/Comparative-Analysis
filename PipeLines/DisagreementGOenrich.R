@@ -17,7 +17,7 @@ mergedDataset<-
 
 
 ## Loading GO:terms collection
-data(GOterms)
+load(paste0(ExternalData,"GOterms.RData"))
 
 ## Storing identifiers of screened cell lines in a vector
 CLs<-unlist(lapply(str_split(colnames(mergedDataset),'---'),function(x) x[1]))
@@ -140,4 +140,4 @@ ALLenrichTP_allHalf<-AllDisagreementCarCP(dataset = mergedDataset[setdiff(rownam
                                       ref_nonEssential = BAGEL_nonEssential,ncbroad=74,ncsanger=44,
                                       filePrefix1 = paste0(ResultsFolder,'GOenrichBroad_TP_allHalf'),
                                       filePrefix2 = paste0(ResultsFolder,'GOenrichSanger_TP_allHalf'))
-
+##Note, this code will give an error at the end but this is only because there are no enriched Terms over 44 of the cell lines for the Sanger data.
