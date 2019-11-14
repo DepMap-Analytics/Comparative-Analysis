@@ -582,37 +582,37 @@ multDensPlot<-function(TOPLOT,COLS,XLIMS,YLIMS,TITLE,LEGentries,XLAB=''){
   }
 }
 distPlot<-function(dataset,title,XLIM,YLIMS){
-  clnames<-str_split(colnames(dataset),'_')
+  clnames<-str_split(colnames(dataset),'---')
   clnames<-unlist(lapply(clnames,function(x){x[1]}))
-
+  
   site<-str_split(colnames(dataset),'---')
   site<-unlist(lapply(site,function(x){x[[2]]}))
-
-
+  
+  
   site1dataset<-dataset[,which(site=='Broad')]
   site2dataset<-dataset[,which(site=='Sanger')]
-
+  
   cdist1<-c(as.dist(cor(site1dataset)))
   cdist2<-c(as.dist(cor(site2dataset)))
-
+  
   cdist<-cor(dataset)
-
+  
   ucl<-unique(clnames)
-
+  
   cdistSAME<-NULL
-
+  
   for (i in 1:length(ucl)){
     id<-which(clnames==ucl[i])
-
+    
     cdistSAME<-c(cdistSAME,cdist[id[1],id[2]])
     cdist[id[1],id[2]]<-NA
     cdist[id[2],id[1]]<-NA
-
-
+    
+    
   }
-
+  
   cdistALL<-as.dist(cdist)
-
+  
   multDensPlot(list(density(cdist1),
                     density(cdist2),
                     density(cdistALL,na.rm = TRUE),
@@ -621,16 +621,17 @@ distPlot<-function(dataset,title,XLIM,YLIMS){
                                                                            'Sanger',
                                                                            'Overall',
                                                                            'Same Cell Line'))
-
+  
   print(paste('Expected R within screen (Broad)',median(cdist1)))
   print(paste('Expected R within screen (Sanger)',median(cdist2)))
   print(paste('Expected overall R',median(cdistALL,na.rm = TRUE)))
   print(paste('R withn cell line across screens',median(cdistSAME)))
-
+  
   print(t.test(cdistSAME,cdist1)$p.value)
   print(t.test(cdistSAME,cdist2)$p.value)
-
+  
 }
+
 dataQuality<-function(dataset){
   
   data(BAGEL_essential)
