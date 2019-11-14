@@ -1,5 +1,5 @@
-This directory contains scripts to reproduce Figures from Dempster et al.
-It requires the R package CRISPRcollatio to be installed from DepMap-Analytics/CRISPRcollatio
+This directory contains scripts to reproduce Figures from Dempster et al, Agreement between two large pan-cancer CRISPR-Cas9 gene dependency datasets.
+
 
 These scripts require the following R packages to be installed:
 CRISPRcleanR
