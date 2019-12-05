@@ -1162,6 +1162,7 @@ RNAbiomarkers<-function(CombineRNA,BroadDep,SangerDep){
   allCorSanger<-cor(t(fullmatrixSanger))
   
   ExtractCorBroad<-allCorBroad[,(nrow(Broad_Var)+1):ncol(allCorBroad)]
+  colnames(ExtractCorBroad)<-rownames(BroadDep)
   ExtractCorBroad<-ExtractCorBroad[1:nrow(Broad_Var),]
   
   BroadCorInput<-as.data.frame(ExtractCorBroad)
